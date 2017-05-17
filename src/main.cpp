@@ -1,6 +1,8 @@
 #include "arduino.h"
 #include <RunningMedian.h>
 #define emgPin A0
+#define motorPin1 2
+#define motorPin2 3
 #define encoderPinA 4
 #define encoderPinB 5
 int offset;
@@ -19,6 +21,10 @@ void setup() {
   Serial.begin(115200);
   Serial.print("init");
 }
+void runMotor(int speed) {
+analogWrite(motorPin2, 0);
+analogWrite(motorPin1, speed);
+}
 void loop() {
   // put your main code here, to run repeatedly:
   emg = analogRead(emgPin);
@@ -29,6 +35,6 @@ void loop() {
   err = offset - emg;
   derivative = err - lasterr;
   move = Kp * err + Ki * integral + Kd *derivative;
-  // move motor(move)
+  runMotor(move);
   lasterr = err;
 }
