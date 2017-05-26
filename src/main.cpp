@@ -1,6 +1,5 @@
 #include "arduino.h"
 #include <RunningMedian.h>
-#include <arm_math.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <TimerOne.h>
@@ -14,9 +13,8 @@
 #define ANALOG_READ_RESOLUTION 10
 #define ANALOG_READ_AVERAGING 16
 #define MAX_CHARS 65
-//volatile int
 int offset, err, lastErr, integral, derivative, speed, preset, read, emg, SAMPLE_RATE_HZ, SPECTRUM_MIN_DB, SPECTRUM_MAX_DB;
-float Kp, Ki,  Kd, move, newZero, emgA, lastemg, emgf;
+float Kp, Ki,  Kd, move, newZero, lastemg, emgF;
 //Band pass butterworth filter order=3 alpha1=0.025 alpha2=0.15
 class  FilterBuBp3{
 public:
@@ -50,15 +48,18 @@ public:
 };
 
 FilterBuBp3 filter;
+RunningMedian samples = RunningMedian(5);
 
 void interrupt(){
-//
-
+	emg = analogRead(emgPin);
+	samples.add(emg);
+	emgF = filter.step(emg);
+	//samples.add(emgF);
+	Serial.println(emgF);
 }
-RunningMedian samples = RunningMedian(5);
 void setup() {
   pinMode(emgPin, INPUT);
-	Timer1.initialize(100);
+	Timer1.initialize(1000);
 	Timer1.start();
 	Timer1.attachInterrupt(interrupt);
   Serial.begin(9600);
@@ -71,19 +72,14 @@ void runMotor(int speed) {
 
 unsigned long prevTime =0;
 void loop() {
-  unsigned long currTime = micros();
+  // unsigned long currTime = micros();
   //Serial.println(currTime - prevTime);
-  prevTime = currTime;
-  emg = analogRead(emgPin);
-  samples.add(emg);
-  emgf = filter.step(emg);
+  // prevTime = currTime;
 
-  emgA = samples.getAverage();
-  Serial.println(emgf);
-    err = offset - emgA;
+    err = offset - emgF;
     derivative = err - lastErr;
     move = Kp * err + Ki * integral + Kd *derivative;
     runMotor(move);
     lastErr = err;
-    lastemg = emgA;
+    lastemg = emgF;
 }
