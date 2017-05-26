@@ -17,7 +17,6 @@
 //volatile int
 int offset, err, lastErr, integral, derivative, speed, preset, read, emg, SAMPLE_RATE_HZ, SPECTRUM_MIN_DB, SPECTRUM_MAX_DB;
 float Kp, Ki,  Kd, move, newZero, emgA, lastemg, emgf;
-
 //Band pass butterworth filter order=3 alpha1=0.025 alpha2=0.15
 class  FilterBuBp3{
 public:
@@ -53,6 +52,7 @@ public:
 FilterBuBp3 filter;
 
 void interrupt(){
+//
 
 }
 RunningMedian samples = RunningMedian(5);
