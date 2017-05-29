@@ -9,11 +9,8 @@
 #define motorPin2 11
 #define encoderPinA 4
 #define encoderPinB 5
-#define FFT_SIZE 256
-#define ANALOG_READ_RESOLUTION 10
-#define ANALOG_READ_AVERAGING 16
-#define MAX_CHARS 65
-int offset, err, lastErr, integral, derivative, speed, preset, read, emg, SAMPLE_RATE_HZ, SPECTRUM_MIN_DB, SPECTRUM_MAX_DB;
+
+int offset, err, lastErr, integral, derivative, speed, preset, read, emg, Time, lastTime;
 float Kp, Ki,  Kd, move, newZero, lastemg, emgF;
 //Band pass butterworth filter order=3 alpha1=0.025 alpha2=0.15
 class  FilterBuBp3{
@@ -46,40 +43,59 @@ public:
 				+3 * (v[2] - v[4]);
 		}
 };
-
 FilterBuBp3 filter;
-RunningMedian samples = RunningMedian(5);
 
-void interrupt(){
+RunningMedian samples = RunningMedian(5);
+void readVal(){// reads value from EMG at set interrupt time
 	emg = analogRead(emgPin);
-	samples.add(emg);
 	emgF = filter.step(emg);
-	//samples.add(emgF);
-	Serial.println(emgF);
+	emgF = abs(emgF);
 }
-void setup() {
-  pinMode(emgPin, INPUT);
-	Timer1.initialize(1000);
-	Timer1.start();
-	Timer1.attachInterrupt(interrupt);
-  Serial.begin(9600);
-  Serial.print("init");
-}
+
 void runMotor(int speed) {
   analogWrite(motorPin2, 0);
   analogWrite(motorPin1, speed);
 }
 
+void motorStop(){
+	runMotor(0);
+}
+
+void setup() {
+  pinMode(emgPin, INPUT);
+	Timer1.initialize(1000);
+	Timer1.start();
+	Timer1.attachInterrupt(motorStop);
+	Timer1.attachInterrupt(readVal);
+  Serial.begin(9600);
+  Serial.print("init");
+	lastTime = 0;
+	Time = 50000;
+}
+
 unsigned long prevTime =0;
 void loop() {
-  // unsigned long currTime = micros();
-  //Serial.println(currTime - prevTime);
-  // prevTime = currTime;
+	if (micros() - lastTime >= 50000){
+		runMotor(0);
+	}
+	if (emgF > 10 ){
+		if( emgF > 255){
+			emgF = 255;
+		}
+		if( micros() - lastTime >= 50000){
+			runMotor(255);
+			lastTime = micros();
+		}
+	}
+	Serial.println(emgF);
 
-    err = offset - emgF;
-    derivative = err - lastErr;
-    move = Kp * err + Ki * integral + Kd *derivative;
-    runMotor(move);
-    lastErr = err;
-    lastemg = emgF;
+//   unsigned long currTime = micros();
+//   Serial.println(currTime - prevTime);
+//   prevTime = currTime;
+//   err = offset - emgF;
+//   derivative = err - lastErr;
+//   move = Kp * err + Ki * integral + Kd *derivative;
+//   runMotor(move);
+//   lastErr = err;
+//   lastemg = emgF;
 }
