@@ -62,13 +62,13 @@ void motorStop(){
 }
 
 void setup() {
+	Serial.begin(9600);
+  Serial.println("init");
   pinMode(emgPin, INPUT);
 	Timer1.initialize(1000);
 	Timer1.start();
-	Timer1.attachInterrupt(motorStop);
 	Timer1.attachInterrupt(readVal);
-  Serial.begin(9600);
-  Serial.print("init");
+	//while(!Serial);
 	lastTime = 0;
 	Time = 50000;
 }
