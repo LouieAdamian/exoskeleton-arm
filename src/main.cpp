@@ -47,6 +47,7 @@ FilterBuBp3 filter;
 
 RunningMedian samples = RunningMedian(5);
 void readVal(){// reads value from EMG at set interrupt time
+	Serial.println("readVal");
 	emg = analogRead(emgPin);
 	emgF = filter.step(emg);
 	emgF = abs(emgF);
@@ -68,6 +69,8 @@ void setup() {
 	Timer1.attachInterrupt(motorStop);
 	Timer1.attachInterrupt(readVal);
   Serial.begin(9600);
+	// while (!Serial.available()) {
+	// }
   Serial.print("init");
 	lastTime = 0;
 	Time = 50000;
@@ -75,20 +78,20 @@ void setup() {
 
 unsigned long prevTime =0;
 void loop() {
+	Serial.println(emgF);
 	if (micros() - lastTime >= 50000){
 		runMotor(0);
 	}
+	if( emgF > 255){
+		emgF = 255;
+	}
 	if (emgF > 10 ){
-		if( emgF > 255){
-			emgF = 255;
-		}
+
 		if( micros() - lastTime >= 50000){
-			runMotor(255);
+			runMotor(emgF);
 			lastTime = micros();
 		}
 	}
-	Serial.println(emgF);
-
 //   unsigned long currTime = micros();
 //   Serial.println(currTime - prevTime);
 //   prevTime = currTime;
